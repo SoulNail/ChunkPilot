@@ -1,0 +1,11 @@
+[project]
+name = "chunkpilot"
+version = "0.1.0"
+description = "RAG knowledge-base console: LLM-assisted chunking, vector ingestion, and an MCP server for agents"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "qdrant-client>=1.18.0",
+    "sentence-transformers>=5.5.1",
+    "torch>=2.12.0",
+]

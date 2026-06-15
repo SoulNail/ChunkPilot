@@ -1,0 +1,13 @@
+[project]
+name = "embedding-service"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.136.3",
+    "flagembedding>=1.4.0",
+    "torch>=2.12.0",
+    "transformers>=4.45,<5",
+    "uvicorn[standard]>=0.49.0",
+]

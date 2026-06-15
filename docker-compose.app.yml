@@ -1,0 +1,42 @@
+# 部署到 192.168.110.51（N100）：前端 + 后端 + Qdrant
+# 启动：docker compose -f docker-compose.app.yml up -d --build
+# 注意：EMBEDDING_SERVICE_URL 指向 110.3 的 GPU 服务
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: rag-backend
+    environment:
+      # 嵌入模式：api=调110.3 GPU服务（默认）；local=后端进程内跑BGE-M3（需改用 local 镜像）
+      - RAG_EMBEDDING_MODE=api
+      - RAG_QDRANT_URL=http://qdrant:6333
+      - RAG_EMBEDDING_SERVICE_URL=http://192.168.110.3:8001
+      - RAG_DOCS_DIR=/app/docs
+      - RAG_DATA_DIR=/app/data
+    volumes:
+      - ./docs:/app/docs           # 文档存储（与宿主共享）
+      - backend_data:/app/data
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: rag-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+  backend_data:

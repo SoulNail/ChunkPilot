@@ -1,0 +1,24 @@
+# 部署到 192.168.110.3（RTX 3060Ti）：GPU 推理服务
+# 前置：宿主已装 nvidia 驱动 + nvidia-container-toolkit
+# 启动：docker compose -f docker-compose.gpu.yml up -d --build
+services:
+  embedding:
+    build: ./embedding_service
+    container_name: rag-embedding
+    ports:
+      - "8001:8001"
+    volumes:
+      - hf_models:/models          # 持久化模型权重，避免重启重下
+    environment:
+      - HF_HOME=/models
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  hf_models:
