@@ -33,6 +33,9 @@ def list_docs() -> list[dict]:
     for p in sorted(settings.docs_dir.glob("*")):
         if not p.is_file():
             continue
+        # 跳过点文件（如 .gitkeep 占位文件），它们不是用户文档
+        if p.name.startswith("."):
+            continue
         meta = doc_meta.get(p.name) or {}
         collection = meta.get("collection") or collection_for(p.name)
         status = meta.get("status", "new")
