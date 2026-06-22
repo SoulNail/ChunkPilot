@@ -6,12 +6,12 @@
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![python](https://img.shields.io/badge/python-3.12+-3776ab)
 
-一个 **RAG 知识库管理后台**，不是问答产品。它负责：管理文档、用 LLM 辅助为每个
-文档判定切分/嵌入参数、灌进 Qdrant；真正的问答由外部 Agent（opencode / claude code /
+一个 **RAG 知识库管理后台**，不是问答产品。它负责：管理文档、为每个
+文档设定切分/嵌入参数、灌进 Qdrant；真正的问答由外部 Agent（opencode / claude code /
 hermes 等）通过 **MCP** 连到本服务、调用检索工具自行完成。
 
-- 前端：管理文档 + 每文档切分参数（LLM 看诊给建议，可手改）+ 灌库 + 调试检索。
-- LLM 的唯一用途：**判定切分/嵌入参数**（不做对话）。
+- 前端：管理文档 + 每文档切分参数（手动填写）+ 灌库 + 调试检索。
+- 切分参数：前端手动填写，或后续由外部 Agent（hermes）经接口提供。
 - 对外检索：后端 `/mcp` 暴露 MCP 工具（混合检索 + 重排）给第三方 Agent。
 
 ## 架构
@@ -25,7 +25,7 @@ hermes 等）通过 **MCP** 连到本服务、调用检索工具自行完成。
 │   └─ /mcp  Agent 检索入口  │◀── MCP ──── opencode / claude code / hermes
 │ qdrant   (:6333)          │             └──────────────────────────┘
 └───────────────────────────┘
-        └─ 用户在前端配置 OpenAI 兼容大模型(base_url+api_key) 仅用于切分参数判定
+        └─ 切分参数：前端手动填写，或由外部 Agent(hermes) 经接口提供
 ```
 
 ## MCP 接入（给 Agent 用）
@@ -48,7 +48,7 @@ claude mcp add --transport http rag-qdrant http://192.168.110.51:8000/mcp
 |------|------|---------|
 | `embedding_service/` | GPU 推理服务（嵌入+重排） | 110.3 |
 | `backend/` | 主应用后端（文档/LLM/切分/灌库/检索 + MCP） | 110.51 |
-| `frontend/` | React 前端（文档/LLM/切分/检索/MCP 接入） | 110.51 |
+| `frontend/` | React 前端（文档/切分参数/检索/MCP 接入） | 110.51 |
 | `ingest.py` / `search.py` | 原始 CLI 工具（直连 GPU 本地嵌入） | — |
 
 ## 本地开发
@@ -65,7 +65,7 @@ cd backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 cd frontend && npm install && npm run dev
 ```
 
-打开前端 → 「LLM 配置」填 base_url/api_key/model → 「文档管理」上传 → 「切分分析」让 LLM 给参数并灌库 →「检索（调试）」自测召回 →「MCP 接入」把地址给 Agent。
+打开前端 → 「文档管理」上传 → 「切分参数 / 灌库」手动填参数并灌库 →「检索（调试）」自测召回 →「MCP 接入」把地址给 Agent。
 
 ## Docker 部署
 
@@ -127,6 +127,5 @@ RAG_EMBEDDING_MODE=local uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 - **混合检索**：BGE-M3 同时产稠密(1024)+稀疏向量，Qdrant 用命名向量存储，检索时 RRF 融合，再用 reranker 精排。
 - **嵌入可切换**：`RAG_EMBEDDING_MODE=api|local`，重依赖（torch/FlagEmbedding）为可选组，api 模式后端镜像保持轻量。
-- **LLM 自适应切分**：后端提取「文档画像」喂给 LLM，结构化输出 chunk_size/overlap/separators/策略 + 回答 prompt，前端可编辑后灌库。
-- **安全**：api_key 仅存后端进程内，前端只显示掩码。
+- **切分参数**：每文档可设 chunk_size/overlap/separators/前置标题路径 + 回答 prompt，前端手动填写或由外部 Agent 经接口提供（`PUT /api/chunking/params/{filename}`）。
 - 依赖一律用 `uv add` / `uv remove` 管理，保持 pyproject.toml 与 uv.lock 同步。

@@ -41,23 +41,6 @@ export const api = {
     req(`/api/docs/${encodeURIComponent(name)}`, { method: "DELETE" }),
   downloadUrl: (name: string) => `/api/docs/${encodeURIComponent(name)}`,
 
-  // LLM
-  getLLM: () => req<any>("/api/llm/config"),
-  setLLM: (cfg: { base_url: string; api_key: string; model: string }) =>
-    req<any>("/api/llm/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cfg),
-    }),
-  testLLM: () => req<any>("/api/llm/test", { method: "POST" }),
-
-  // 切分分析
-  analyze: (filename: string) =>
-    req<any>("/api/chunking/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename }),
-    }),
   // 手动保存某文档的切分参数（不经 LLM）
   saveParams: (filename: string, params: ChunkParams, collection?: string, answer_prompt?: string) =>
     req<any>(`/api/chunking/params/${encodeURIComponent(filename)}`, {

@@ -1,6 +1,7 @@
 """主应用后端入口（部署到 192.168.110.51）。
 
-职责：文档管理 + 每文档切分/嵌入参数（含 LLM 辅助判定）+ 灌库 + 调试检索。
+职责：文档管理 + 每文档切分/嵌入参数 + 灌库 + 调试检索。
+切分参数由前端手动填写或由外部 Agent（hermes 等）经接口提供，不在本服务内调用第三方 LLM。
 对外的检索能力通过挂载在 /mcp 的 MCP Server 暴露给第三方 Agent。
 真正的问答不在本服务内发生。
 """
@@ -12,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.mcp_server import mcp
-from app.routers import chunking, documents, ingest, kb, llm, search
+from app.routers import chunking, documents, ingest, kb, search
 
 # 先构建 MCP 的 ASGI 子应用（这一步会创建 session_manager）
 _mcp_app = mcp.streamable_http_app()
@@ -34,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (documents.router, llm.router, chunking.router,
+for r in (documents.router, chunking.router,
           ingest.router, search.router, kb.router):
     app.include_router(r)
 

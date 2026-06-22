@@ -13,9 +13,6 @@ export default function Analyze() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [filename, setFilename] = useState("");
   const [form, setForm] = useState({ ...DEFAULTS });
-  const [reasoning, setReasoning] = useState("");      // 仅 LLM 分析时有
-  const [profile, setProfile] = useState<any>(null);
-  const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [progress, setProgress] = useState<any>(null);
@@ -29,7 +26,7 @@ export default function Analyze() {
   // 选择文档时，把它已保存的参数填进表单（没有就用默认）
   const selectDoc = (name: string, list = docs) => {
     setFilename(name);
-    setReasoning(""); setProfile(null); setProgress(null); setMsg("");
+    setProgress(null); setMsg("");
     const d = list.find((x) => x.name === name);
     const p = d?.params;
     setForm({
@@ -42,24 +39,6 @@ export default function Analyze() {
   };
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
-
-  // 可选：让 LLM 分析，结果填入表单
-  const analyze = async () => {
-    setAnalyzing(true); setMsg("");
-    try {
-      const plan = await api.analyze(filename);
-      setForm({
-        chunk_size: plan.chunk_size ?? DEFAULTS.chunk_size,
-        chunk_overlap: plan.chunk_overlap ?? DEFAULTS.chunk_overlap,
-        separators: plan.separators ?? null,
-        prepend_heading_path: !!plan.prepend_heading_path,
-        answer_prompt: plan.suggested_answer_prompt ?? "",
-      });
-      setReasoning(plan.reasoning || "");
-      setProfile(plan._profile || null);
-    } catch (e: any) { setMsg(e.message); }
-    finally { setAnalyzing(false); }
-  };
 
   const paramsPayload = () => ({
     chunk_size: form.chunk_size,
@@ -98,10 +77,6 @@ export default function Analyze() {
           value={filename} onChange={(e) => selectDoc(e.target.value)}>
           {docs.map((d) => <option key={d.name}>{d.name}</option>)}
         </select>
-        <button onClick={analyze} disabled={analyzing || !filename}
-          className="px-4 py-2 bg-white border border-indigo-600 text-indigo-600 rounded-md text-sm disabled:opacity-50">
-          {analyzing ? "分析中…" : "用 LLM 分析参数（可选）"}
-        </button>
       </div>
 
       {msg && <div className={`text-sm ${msg.includes("✅") ? "text-emerald-600" : "text-red-600"}`}>{msg}</div>}
@@ -109,11 +84,7 @@ export default function Analyze() {
       {filename && (
         <div className="bg-white p-4 rounded-lg space-y-3">
           <div className="text-sm text-slate-500 flex justify-between">
-            <span>
-              {profile
-                ? `画像：${profile.char_count} 字符 · ${profile.language} · ${profile.heading_count} 标题 · ${profile.code_fence_count} 代码块`
-                : "直接手动填参数，或点上方让 LLM 给建议"}
-            </span>
+            <span>手动填写切分参数后保存 / 灌库（参数也可由 Agent 经接口提供）</span>
             <span className="text-slate-400">目标库：{cur?.collection}</span>
           </div>
 
@@ -137,12 +108,6 @@ export default function Analyze() {
                 try { set("separators", JSON.parse(t)); } catch { /* 暂不更新，等合法 JSON */ }
               }} />
           </div>
-
-          {reasoning && (
-            <div className="text-sm bg-amber-50 border border-amber-200 rounded-md p-3">
-              <b>LLM 判断依据：</b>{reasoning}
-            </div>
-          )}
 
           <div>
             <span className="text-sm text-slate-600">回答风格 prompt（供 Agent 经 MCP 读取，可留空）</span>

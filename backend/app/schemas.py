@@ -4,21 +4,11 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
-class LLMConfigIn(BaseModel):
-    base_url: str
-    api_key: str
-    model: str
-
-
 class ChunkParams(BaseModel):
     chunk_size: int = 1000
     chunk_overlap: int = 150
     separators: list[str] | None = None
     prepend_heading_path: bool = False
-
-
-class AnalyzeIn(BaseModel):
-    filename: str
 
 
 class ParamsIn(BaseModel):

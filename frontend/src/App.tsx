@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import Documents from "./pages/Documents";
-import LLMConfig from "./pages/LLMConfig";
 import Analyze from "./pages/Analyze";
 import Search from "./pages/Search";
 import MCPInfo from "./pages/MCPInfo";
 
 const TABS = [
   { key: "docs", label: "文档管理", el: <Documents /> },
-  { key: "llm", label: "LLM 配置（参数判定用）", el: <LLMConfig /> },
   { key: "analyze", label: "切分参数 / 灌库", el: <Analyze /> },
   { key: "search", label: "检索自测", el: <Search /> },
   { key: "mcp", label: "MCP 接入", el: <MCPInfo /> },

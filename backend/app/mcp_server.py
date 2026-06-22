@@ -31,7 +31,7 @@ def list_knowledge_bases() -> list[dict]:
     """列出所有可检索的知识库（Qdrant collection）及其元信息。
 
     返回每个知识库的：collection 名、向量条数、来源文档、文档类型/语言，
-    以及该库建议的回答风格（answer_prompt，由 LLM 切分分析时生成）。
+    以及该库建议的回答风格（answer_prompt，由前端或 Agent 灌库时设定）。
     Agent 应据此决定该在哪个库里检索。
     """
     # collection 名 -> 来源文档元数据
