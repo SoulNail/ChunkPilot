@@ -36,8 +36,38 @@ export default function Documents() {
     finally { setImporting(false); if (kbRef.current) kbRef.current.value = ""; }
   };
 
+  // 概览统计：本地原文 vs Qdrant 实际知识库（即使列表为空也要让人看清是哪边没内容）
+  const localDocs = docs.filter((d) => d.has_local_file !== false);
+  const kbCollections = new Set(
+    docs.filter((d) => d.status === "done" && (d.points_count ?? 0) > 0).map((d) => d.collection),
+  );
+  const totalVectors = docs
+    .filter((d) => d.status === "done" && (d.points_count ?? 0) > 0)
+    .reduce((s, d) => s + (d.points_count ?? 0), 0);
+  const qdrantOnly = docs.filter((d) => d.has_local_file === false).length;
+
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="text-xs text-slate-400 mb-1">📁 本地原文档（docs/）</div>
+          <div className="text-2xl font-semibold text-slate-700">{localDocs.length}</div>
+          <div className="text-xs text-slate-400 mt-1">可上传 / 下载 / 重新灌库的源文件</div>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="text-xs text-slate-400 mb-1">🗄️ Qdrant 知识库（已灌库）</div>
+          <div className="text-2xl font-semibold text-emerald-600">
+            {kbCollections.size}
+            <span className="text-sm font-normal text-slate-400 ml-2">
+              共 {totalVectors.toLocaleString()} 块向量
+            </span>
+          </div>
+          <div className="text-xs text-slate-400 mt-1">
+            MCP 实际可检索的内容{qdrantOnly > 0 ? ` · 其中 ${qdrantOnly} 个无本地原文` : ""}
+          </div>
+        </div>
+      </div>
+
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) onUpload(f); }}
@@ -78,28 +108,43 @@ export default function Documents() {
             <th className="text-left p-3">状态</th><th className="p-3">操作</th></tr>
         </thead>
         <tbody>
-          {docs.map((d) => (
-            <tr key={d.name} className="border-t border-slate-100 align-top">
-              <td className="p-3">{d.name}</td>
-              <td className="p-3 whitespace-nowrap">{(d.size_bytes / 1024).toFixed(1)} KB</td>
+          {docs.map((d) => {
+            const local = d.has_local_file !== false;
+            return (
+            <tr key={d.collection + "/" + d.name} className="border-t border-slate-100 align-top">
+              <td className="p-3">
+                {d.name}
+                {!local && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded text-[11px] bg-sky-100 text-sky-700"
+                    title="该知识库存在于 Qdrant，但本地 docs/ 没有对应原文档（CLI 灌库 / 导入未带原文 / 原文已删）">
+                    仅 Qdrant
+                  </span>
+                )}
+              </td>
+              <td className="p-3 whitespace-nowrap">
+                {local && d.size_bytes != null ? `${(d.size_bytes / 1024).toFixed(1)} KB` : <span className="text-slate-300">—</span>}
+              </td>
               <td className="p-3 text-slate-500">{d.collection}</td>
               <td className="p-3 text-slate-500 text-xs">
                 {d.params
                   ? `size ${d.params.chunk_size} · overlap ${d.params.chunk_overlap}${d.params.prepend_heading_path ? " · +标题路径" : ""}`
-                  : <span className="text-slate-300">未设置（去「切分分析」）</span>}
+                  : <span className="text-slate-300">{local ? "未设置（去「切分分析」）" : "—"}</span>}
               </td>
               <td className="p-3"><StatusBadge d={d} /></td>
               <td className="p-3 text-center space-x-3 whitespace-nowrap">
-                <a className="text-indigo-600" href={api.downloadUrl(d.name)}>下载</a>
+                {local && <a className="text-indigo-600" href={api.downloadUrl(d.name)}>下载</a>}
                 {d.status === "done" && (
                   <a className="text-emerald-600" href={api.exportKbUrl(d.collection)}>导出知识库</a>
                 )}
-                <button className="text-red-500" onClick={() => onDelete(d.name)}>删除</button>
+                {local && <button className="text-red-500" onClick={() => onDelete(d.name)}>删除</button>}
               </td>
             </tr>
-          ))}
+            );
+          })}
           {docs.length === 0 && (
-            <tr><td colSpan={6} className="p-6 text-center text-slate-400">暂无文档</td></tr>
+            <tr><td colSpan={6} className="p-6 text-center text-slate-400">
+              docs 文件夹与 Qdrant 均无内容：可上传文档后去「切分分析」灌库，或导入已有 .kb.zip
+            </td></tr>
           )}
         </tbody>
       </table>

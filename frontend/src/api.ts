@@ -18,7 +18,7 @@ export interface ChunkParams {
 
 export interface Doc {
   name: string;
-  size_bytes: number;
+  size_bytes: number | null;
   collection: string;
   params?: ChunkParams | null;
   analysis?: Record<string, any> | null;
@@ -26,6 +26,7 @@ export interface Doc {
   points_count?: number | null;
   error?: string | null;
   updated_at?: string | null;
+  has_local_file?: boolean;   // true=本地 docs/ 有原文；false=仅在 Qdrant
 }
 
 export const api = {

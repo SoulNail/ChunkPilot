@@ -30,6 +30,7 @@ def list_docs() -> list[dict]:
         live = {}
 
     out = []
+    claimed: set[str] = set()           # 已被本地原文档「认领」的 collection
     for p in sorted(settings.docs_dir.glob("*")):
         if not p.is_file():
             continue
@@ -38,6 +39,7 @@ def list_docs() -> list[dict]:
             continue
         meta = doc_meta.get(p.name) or {}
         collection = meta.get("collection") or collection_for(p.name)
+        claimed.add(collection)
         status = meta.get("status", "new")
         points = meta.get("points_count")
         # 灌库进行中以本地状态为准；否则以 Qdrant 实际存在与否为准
@@ -59,6 +61,25 @@ def list_docs() -> list[dict]:
             "points_count": points,
             "error": meta.get("error"),
             "updated_at": meta.get("updated_at"),
+            "has_local_file": True,                  # 本地 docs/ 里有原文档
+        })
+
+    # Qdrant 里存在、但本地没有对应原文档的知识库：
+    # CLI 直接灌的、导入未带原文的、或原文被删但向量还在的。也要展示出来。
+    for col, cnt in sorted(live.items()):
+        if col in claimed or cnt <= 0:
+            continue
+        out.append({
+            "name": col,
+            "size_bytes": None,
+            "collection": col,
+            "params": None,
+            "analysis": None,
+            "status": "done",
+            "points_count": cnt,
+            "error": None,
+            "updated_at": None,
+            "has_local_file": False,                 # 只在 Qdrant 里，无本地原文
         })
     return out
 
