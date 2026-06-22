@@ -18,6 +18,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile.local
     container_name: chunkpilot-backend
+    ports:
+      - "38000:8000"               # 后端/MCP 对外端口：hermes 连 http://<IP>:38000/mcp
     environment:
       - RAG_EMBEDDING_MODE=local        # 进程内嵌入/重排，不连 GPU 机
       - RAG_QDRANT_URL=http://qdrant:6333
@@ -39,7 +41,7 @@ services:
     build: ./frontend
     container_name: chunkpilot-frontend
     ports:
-      - "80:80"
+      - "22180:80"
     depends_on:
       - backend
     restart: unless-stopped

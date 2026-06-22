@@ -14,6 +14,8 @@ services:
   backend:
     build: ./backend
     container_name: rag-backend
+    ports:
+      - "38000:8000"               # 后端/MCP 对外端口：hermes 连 http://<IP>:38000/mcp
     environment:
       # 嵌入模式：api=调110.3 GPU服务（默认）；local=后端进程内跑BGE-M3（需改用 local 镜像）
       - RAG_EMBEDDING_MODE=api

@@ -30,7 +30,8 @@ hermes 等）通过 **MCP** 连到本服务、调用检索工具自行完成。
 
 ## MCP 接入（给 Agent 用）
 
-部署后 Agent 连接 `http://<部署IP>:8000/mcp`（Streamable HTTP）。暴露工具：
+部署后 Agent 连接 `http://<部署IP>:38000/mcp`（Streamable HTTP）。
+后端容器内部仍监听 8000，compose 把它映射到宿主 **38000** 对外（见 `docker-compose.app.yml`）。暴露工具：
 
 | 工具 | 作用 |
 |------|------|
@@ -39,7 +40,7 @@ hermes 等）通过 **MCP** 连到本服务、调用检索工具自行完成。
 
 ```bash
 # Claude Code 接入示例
-claude mcp add --transport http rag-qdrant http://192.168.110.51:8000/mcp
+claude mcp add --transport http rag-qdrant http://192.168.110.51:38000/mcp
 ```
 
 ## 目录

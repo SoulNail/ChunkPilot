@@ -11,8 +11,8 @@ export default function MCPInfo() {
   }, []);
 
   // 浏览器访问前端的地址即可推断后端对外地址（同机部署）。
-  // dev 模式下前端在 5173，但 MCP/后端在 8000，这里给出提示。
-  const base = origin.replace(/:\d+$/, ":8000");
+  // 后端容器内监听 8000，compose 对外发布为 38000，故 MCP 对外地址用 38000。
+  const base = origin.replace(/:\d+$/, ":38000");
   const mcpUrl = `${base}/mcp`;
 
   const claudeJson = `{
@@ -40,7 +40,7 @@ export default function MCPInfo() {
           >复制</button>
         </div>
         <p className="text-xs text-slate-400">
-          传输方式：Streamable HTTP。部署后请确认对外地址为后端 8000 端口（或经反代暴露的地址）。
+          传输方式：Streamable HTTP。对外地址为后端 38000 端口（容器内 8000，compose 映射到宿主 38000）。
         </p>
       </div>
 

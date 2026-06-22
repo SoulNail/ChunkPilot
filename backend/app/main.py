@@ -39,7 +39,7 @@ for r in (documents.router, chunking.router,
           ingest.router, search.router, kb.router):
     app.include_router(r)
 
-# 第三方 Agent 的检索入口：http://<host>:8000/mcp
+# 第三方 Agent 的检索入口：容器内 :8000，对外发布为 :38000 → http://<host>:38000/mcp
 app.mount("/mcp", _mcp_app)
 
 

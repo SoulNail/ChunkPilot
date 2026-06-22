@@ -5,7 +5,7 @@ MCP 连到这里，调用下面的工具去查 Qdrant（混合检索 + 重排）
 回答。前端只管文档与切分/嵌入参数；检索能力统一从这里对外暴露。
 
 挂载在后端同进程的 `/mcp` 路径下，复用 app.services 里的嵌入/检索逻辑。
-Agent 连接地址：http://<部署IP>:8000/mcp
+Agent 连接地址：http://<部署IP>:38000/mcp（容器内 8000，compose 映射到宿主 38000）
 """
 from __future__ import annotations
 
