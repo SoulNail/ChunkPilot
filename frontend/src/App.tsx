@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "./api";
 import Documents from "./pages/Documents";
 import LLMConfig from "./pages/LLMConfig";
 import Analyze from "./pages/Analyze";
@@ -15,6 +16,8 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState("docs");
+  const [mode, setMode] = useState<string | null>(null);
+  useEffect(() => { api.health().then((h) => setMode(h.embedding_mode)).catch(() => {}); }, []);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-6">
@@ -34,6 +37,14 @@ export default function App() {
             </button>
           ))}
         </nav>
+        {mode && (
+          <span
+            className="ml-auto text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-500"
+            title={mode === "local" ? "嵌入/重排在后端进程内（不依赖 GPU 机）" : "嵌入/重排调用远程 GPU 服务"}
+          >
+            嵌入：{mode === "local" ? "本地" : "GPU 机"}
+          </span>
+        )}
       </header>
       <main className="max-w-5xl mx-auto p-6">
         {TABS.find((t) => t.key === tab)?.el}

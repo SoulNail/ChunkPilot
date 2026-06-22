@@ -16,8 +16,10 @@ wheels/
 # ---- Node / frontend ----
 node_modules/
 frontend/dist/
-*.local
 *.tsbuildinfo
+# vite 本地环境覆盖文件（注意别用 *.local，会误伤 Dockerfile.local）
+.env.local
+.env.*.local
 
 # ---- 运行时数据（不入库）----
 # 后端的文档元数据、SQLite 等本地状态

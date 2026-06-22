@@ -4,8 +4,11 @@ import { api, type Doc } from "../api";
 export default function Documents() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [err, setErr] = useState("");
+  const [msg, setMsg] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const kbRef = useRef<HTMLInputElement>(null);
 
   const load = () => api.listDocs().then(setDocs).catch((e) => setErr(e.message));
   useEffect(() => { load(); }, []);
@@ -21,6 +24,16 @@ export default function Documents() {
     if (!confirm(`删除 ${name}？`)) return;
     try { await api.deleteDoc(name); await load(); }
     catch (e: any) { setErr(e.message); }
+  };
+
+  const onImport = async (f: File) => {
+    setImporting(true); setErr(""); setMsg("");
+    try {
+      const r = await api.importKb(f);
+      setMsg(`已导入知识库 ${r.collection}（${r.points_count} 块${r.wrote_doc ? "，含原文档" : ""}）`);
+      await load();
+    } catch (e: any) { setErr(e.message); }
+    finally { setImporting(false); if (kbRef.current) kbRef.current.value = ""; }
   };
 
   return (
@@ -41,7 +54,22 @@ export default function Documents() {
           onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
       </div>
 
+      <div className="flex items-center gap-3 text-sm">
+        <button
+          onClick={() => kbRef.current?.click()}
+          className="px-3 py-1.5 border border-indigo-300 text-indigo-700 rounded-md"
+        >
+          {importing ? "导入中…" : "导入知识库（.zip）"}
+        </button>
+        <span className="text-slate-400 text-xs">
+          在 GPU 机上灌好后导出的 .kb.zip，可在此导入到本机 Qdrant（无需重新嵌入）
+        </span>
+        <input ref={kbRef} type="file" accept=".zip" hidden
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f); }} />
+      </div>
+
       {err && <div className="text-red-600 text-sm">{err}</div>}
+      {msg && <div className="text-emerald-600 text-sm">{msg}</div>}
 
       <table className="w-full bg-white rounded-lg overflow-hidden text-sm">
         <thead className="bg-slate-100 text-slate-600">
@@ -63,6 +91,9 @@ export default function Documents() {
               <td className="p-3"><StatusBadge d={d} /></td>
               <td className="p-3 text-center space-x-3 whitespace-nowrap">
                 <a className="text-indigo-600" href={api.downloadUrl(d.name)}>下载</a>
+                {d.status === "done" && (
+                  <a className="text-emerald-600" href={api.exportKbUrl(d.collection)}>导出知识库</a>
+                )}
                 <button className="text-red-500" onClick={() => onDelete(d.name)}>删除</button>
               </td>
             </tr>

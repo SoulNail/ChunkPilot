@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.mcp_server import mcp
-from app.routers import chunking, documents, ingest, llm, search
+from app.routers import chunking, documents, ingest, kb, llm, search
 
 # 先构建 MCP 的 ASGI 子应用（这一步会创建 session_manager）
 _mcp_app = mcp.streamable_http_app()
@@ -35,7 +35,7 @@ app.add_middleware(
 )
 
 for r in (documents.router, llm.router, chunking.router,
-          ingest.router, search.router):
+          ingest.router, search.router, kb.router):
     app.include_router(r)
 
 # 第三方 Agent 的检索入口：http://<host>:8000/mcp
@@ -44,9 +44,15 @@ app.mount("/mcp", _mcp_app)
 
 @app.get("/api/health")
 def health() -> dict:
+    from app.config import settings
     from app.services import embedding
     try:
         emb = embedding.health()
     except Exception as e:  # noqa: BLE001
         emb = {"error": str(e)}
-    return {"status": "ok", "embedding_service": emb, "mcp_endpoint": "/mcp"}
+    return {
+        "status": "ok",
+        "embedding_mode": settings.embedding_mode,   # api=调GPU机 / local=进程内
+        "embedding_service": emb,
+        "mcp_endpoint": "/mcp",
+    }

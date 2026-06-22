@@ -76,6 +76,16 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  // 知识库迁移（快照搬运）
+  exportKbUrl: (collection: string) =>
+    `/api/kb/${encodeURIComponent(collection)}/export`,
+  importKb: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return req<{ collection: string; doc_name: string | null; wrote_doc: boolean; points_count: number }>(
+      "/api/kb/import", { method: "POST", body: fd });
+  },
+
   // 检索
   collections: () => req<string[]>("/api/search/collections"),
   search: (body: any) =>

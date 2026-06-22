@@ -47,8 +47,8 @@ claude mcp add --transport http rag-qdrant http://192.168.110.51:8000/mcp
 | 路径 | 说明 | 部署位置 |
 |------|------|---------|
 | `embedding_service/` | GPU 推理服务（嵌入+重排） | 110.3 |
-| `backend/` | 主应用后端（文档/LLM/切分/检索/对话） | 110.51 |
-| `frontend/` | React 前端（五页面） | 110.51 |
+| `backend/` | 主应用后端（文档/LLM/切分/灌库/检索 + MCP） | 110.51 |
+| `frontend/` | React 前端（文档/LLM/切分/检索/MCP 接入） | 110.51 |
 | `ingest.py` / `search.py` | 原始 CLI 工具（直连 GPU 本地嵌入） | — |
 
 ## 本地开发
@@ -78,6 +78,33 @@ docker compose -f docker-compose.app.yml up -d --build
 ```
 
 > 若 110.51 上已单独运行 Qdrant，可删除 `docker-compose.app.yml` 里的 `qdrant` 服务，并把 `RAG_QDRANT_URL` 改成现有地址。
+
+### 单机自包含部署（不依赖 GPU 机）
+
+想让一台机器（如 N100）独立跑、不连任何 GPU 机：
+
+```bash
+docker compose -f docker-compose.app.local.yml up -d --build
+```
+
+后端用 `Dockerfile.local`（含 torch/FlagEmbedding），`RAG_EMBEDDING_MODE=local`，在进程内用
+CPU 做嵌入/重排。**查询很轻**；但大文档灌库在 CPU 上慢，推荐配合下面的「知识库迁移」：
+重活在 GPU 机上灌，灌好导出再导入本机。前端右上角的「嵌入：本地/GPU 机」徽标可确认当前模式。
+
+## 知识库迁移（灌好之后搬过去）
+
+向量灌进 Qdrant 后即与嵌入解耦，可整包搬到另一台机器**无需重新嵌入**。底层用 Qdrant 快照：
+
+1. **任意 GPU 机**上正常灌库（api 模式，重活交给 GPU）。
+2. 「文档管理」里该文档点 **导出知识库** → 下载 `<collection>.kb.zip`
+   （内含 Qdrant 快照 + 切分参数/分析 + 原文档）。
+3. 到目标机（如 N100）前端「文档管理」点 **导入知识库** → 选这个 zip →
+   目标 Qdrant 原样重建该 collection，文档列表立即显示「已灌库」，MCP 可直接检索。
+
+> 两端 Qdrant 用同一镜像 tag、嵌入同为 BGE-M3（本项目固定），即可即插即用。
+> 局域网内两台 Qdrant 互通时，也可改用快照远程恢复一键直推（后续可加）。
+
+对应接口：`GET /api/kb/{collection}/export`、`POST /api/kb/import`。
 
 ## 嵌入模式（api / local 二选一）
 
